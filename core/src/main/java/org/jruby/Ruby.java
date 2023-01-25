@@ -253,6 +253,8 @@ public final class Ruby implements Constantizable {
      * @see org.jruby.RubyInstanceConfig
      */
     private Ruby(RubyInstanceConfig config) {
+        System.err.println("Initializing RELEX custom JRuby build v2");
+
         this.config             = config;
         this.threadService      = new ThreadService(this);
 

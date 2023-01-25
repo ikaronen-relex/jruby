@@ -139,10 +139,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         throw concurrentModification(getRuntime(), null);
     }
 
-    private static RuntimeException concurrentModification(Ruby runtime, Exception cause) {
-        RuntimeException ex = runtime.newConcurrencyError("Detected invalid array contents due to unsynchronized modifications with concurrent users");
+    private RuntimeException concurrentModification(Ruby runtime, Exception cause) {
+        RuntimeException ex = runtime.newConcurrencyError("Detected invalid array contents due to unsynchronized modifications with concurrent users (" +
+            "class=" + getClass().getSimpleName() + ", " +
+            "realLength=" + realLength + ", " +
+            "begin=" + begin + ", " +
+            "isShared=" + isShared + ", " +
+            "values=" + (values == null ? "null" : values == NULL_ARRAY ? "NULL_ARRAY" : values.getClass().getSimpleName()) + ")");
         // NOTE: probably not useful to be on except for debugging :
-        // if ( cause != null ) ex.initCause(cause);
+        if ( cause != null ) ex.initCause(cause);
         return ex;
     }
 
@@ -5133,7 +5138,7 @@ float_loop:
                 output.dumpObject(array.eltInternal(i));
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            throw concurrentModification(array.getRuntime(), ex);
+            throw array.concurrentModification(array.getRuntime(), ex);
         }
     }
 
@@ -5725,7 +5730,7 @@ float_loop:
         return false;
     }
 
-    private static IRubyObject safeArrayRef(Ruby runtime, IRubyObject[] values, int i) {
+    private IRubyObject safeArrayRef(Ruby runtime, IRubyObject[] values, int i) {
         try {
             return values[i];
         } catch (ArrayIndexOutOfBoundsException ex) {
@@ -5737,7 +5742,7 @@ float_loop:
         return safeArraySet(metaClass.runtime, values, i, value);
     }
 
-    protected static IRubyObject safeArraySet(Ruby runtime, IRubyObject[] values, int i, IRubyObject value) {
+    protected IRubyObject safeArraySet(Ruby runtime, IRubyObject[] values, int i, IRubyObject value) {
         try {
             return values[i] = value;
         } catch (ArrayIndexOutOfBoundsException ex) {
@@ -5745,7 +5750,7 @@ float_loop:
         }
     }
 
-    private static IRubyObject safeArrayRefSet(Ruby runtime, IRubyObject[] values, int i, IRubyObject value) {
+    private IRubyObject safeArrayRefSet(Ruby runtime, IRubyObject[] values, int i, IRubyObject value) {
         try {
             IRubyObject tmp = values[i];
             values[i] = value;
@@ -5755,7 +5760,7 @@ float_loop:
         }
     }
 
-    private static IRubyObject safeArrayRefCondSet(Ruby runtime, IRubyObject[] values, int i, boolean doSet, IRubyObject value) {
+    private IRubyObject safeArrayRefCondSet(Ruby runtime, IRubyObject[] values, int i, boolean doSet, IRubyObject value) {
         try {
             IRubyObject tmp = values[i];
             if (doSet) values[i] = value;
@@ -5769,7 +5774,7 @@ float_loop:
         safeArrayCopy(metaClass.runtime, source, sourceStart, target, targetStart, length);
     }
 
-    private static void safeArrayCopy(Ruby runtime, IRubyObject[] source, int sourceStart, IRubyObject[] target, int targetStart, int length) {
+    private void safeArrayCopy(Ruby runtime, IRubyObject[] source, int sourceStart, IRubyObject[] target, int targetStart, int length) {
         try {
             System.arraycopy(source, sourceStart, target, targetStart, length);
         } catch (ArrayIndexOutOfBoundsException ex) {
